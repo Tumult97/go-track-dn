@@ -1,24 +1,24 @@
 package main
 
 import (
-	item_controller "api/controllers"
+	"log"
+	"tracker/api/config"
+	database "tracker/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterItemController(router *gin.Engine) {
-	const controllerEndpoint = "/items"
-
-	router.GET(controllerEndpoint, item_controller.GetItems)
-	router.GET(controllerEndpoint+"/:id", item_controller.GetItemById)
-	router.POST(controllerEndpoint, item_controller.PostItems)
-	router.DELETE(controllerEndpoint+"/:id", item_controller.DeleteItemById)
-}
-
 func main() {
+	// Initialize database connection
+	database.Connect()
+	defer database.Close()
+
 	router := gin.Default()
 
-	RegisterItemController(router)
+	config.RegisterItemController(router)
 
-	router.Run("localhost:5100")
+	log.Printf("Server starting on localhost:5100")
+	if err := router.Run("localhost:5100"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
