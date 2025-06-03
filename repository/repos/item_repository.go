@@ -11,8 +11,10 @@ import (
 
 type IItemRepository interface {
 	Create(item entities.Item) (int, error)
+	Update(item entities.Item) (int, error)
 	GetAll() (*[]entities.Item, error)
 	GetById(id int) (*entities.Item, error)
+	DeleteById(id int) (int, error)
 }
 
 type itemRepository struct{}
@@ -40,6 +42,37 @@ func (r *itemRepository) Create(item entities.Item) (int, error) {
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert item: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *itemRepository) Update(item entities.Item) (int, error) {
+	fmt.Println("Inside Update method")
+	query := `
+		UPDATE dbo.items
+			SET name = @name,
+			description = @description,
+			quantity = @quantity,
+			price = @price,
+			is_per_item = @is_per_item
+		OUTPUT INSERTED.id
+		WHERE id = @id
+	`
+
+	var id int
+
+	err := database.DB.QueryRowContext(context.Background(), query,
+		sql.Named("id", item.Id),
+		sql.Named("name", item.Name),
+		sql.Named("description", item.Description),
+		sql.Named("quantity", item.Quantity),
+		sql.Named("price", item.Price),
+		sql.Named("is_per_item", item.IsPerItem),
+	).Scan(&id)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to update item: %w", err)
 	}
 
 	return id, nil
@@ -77,4 +110,15 @@ func (r *itemRepository) GetById(id int) (*entities.Item, error) {
 	}
 
 	return &item, nil
+}
+
+func (r *itemRepository) DeleteById(id int) (int, error) {
+	query := "DELETE FROM items WHERE id = @id"
+	err := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id)).Scan(&id)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete item: %w", err)
+	}
+
+	return id, nil
 }

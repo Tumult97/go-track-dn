@@ -39,8 +39,14 @@ func PostItems(c *gin.Context) {
 		return
 	}
 
-	// items = append(items, newItem)
-	id, err := repo.Create(newItem)
+	var id int
+	var err error
+
+	if newItem.Id != 0 {
+		id, err = repo.Update(newItem)
+	} else {
+		id, err = repo.Create(newItem)
+	}
 
 	if err != nil || id == 0 {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -59,14 +65,14 @@ func GetItemById(c *gin.Context) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Parameter Id requried a valid number. %s", err.Error())})
 	}
 
-	for _, item := range items {
-		if item.Id == id {
-			c.IndentedJSON(http.StatusOK, item)
-			return
-		}
+	item, err := repo.GetById(id)
+
+	if item == nil || err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Item not found."})
+		return
 	}
 
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Item not found."})
+	c.IndentedJSON(http.StatusOK, item)
 }
 
 func DeleteItemById(c *gin.Context) {
@@ -78,25 +84,15 @@ func DeleteItemById(c *gin.Context) {
 		return
 	}
 
-	newItems := make([]entities.Item, 0, len(items))
-	found := false
+	id, err = repo.DeleteById(id)
 
-	for _, item := range items {
-		if item.Id == id {
-			found = true
-			continue
-		}
-		newItems = append(newItems, item)
-	}
-
-	if !found {
+	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{
 			"message": fmt.Sprintf("Item with id %d not found.", id),
 		})
 		return
 	}
 
-	items = newItems
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("Item with id %d deleted successfully.", id),
 	})
