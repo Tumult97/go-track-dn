@@ -10,11 +10,11 @@ import (
 )
 
 type IItemRepository interface {
-	Create(item entities.Item) (int, error)
-	Update(item entities.Item) (int, error)
-	GetAll() (*[]entities.Item, error)
-	GetById(id int) (*entities.Item, error)
-	DeleteById(id int) (int, error)
+	Create(item entities.Item, userId int) (int, error)
+	Update(item entities.Item, userId int) (int, error)
+	GetAll(userId int) (*[]entities.Item, error)
+	GetById(id int, userId int) (*entities.Item, error)
+	DeleteById(id int, userId int) (int, error)
 }
 
 type itemRepository struct{}
@@ -23,11 +23,11 @@ func NewItemRepository() IItemRepository {
 	return &itemRepository{}
 }
 
-func (r *itemRepository) Create(item entities.Item) (int, error) {
+func (r *itemRepository) Create(item entities.Item, userId int) (int, error) {
 	query := `
-		INSERT INTO items (name, description, quantity, price, is_per_item)
+		INSERT INTO items (name, description, quantity, price, is_per_item, user_id)
 		OUTPUT INSERTED.id
-		VALUES (@p1, @p2, @p3, @p4, @p5)
+		VALUES (@p1, @p2, @p3, @p4, @p5, @p6)
 	`
 
 	var id int
@@ -38,6 +38,7 @@ func (r *itemRepository) Create(item entities.Item) (int, error) {
 		sql.Named("p3", item.Quantity),
 		sql.Named("p4", item.Price),
 		sql.Named("p5", item.IsPerItem),
+		sql.Named("p6", userId),
 	).Scan(&id)
 
 	if err != nil {
@@ -47,7 +48,7 @@ func (r *itemRepository) Create(item entities.Item) (int, error) {
 	return id, nil
 }
 
-func (r *itemRepository) Update(item entities.Item) (int, error) {
+func (r *itemRepository) Update(item entities.Item, userId int) (int, error) {
 	fmt.Println("Inside Update method")
 	query := `
 		UPDATE dbo.items
@@ -56,6 +57,7 @@ func (r *itemRepository) Update(item entities.Item) (int, error) {
 			quantity = @quantity,
 			price = @price,
 			is_per_item = @is_per_item
+			user_id = @user_id
 		OUTPUT INSERTED.id
 		WHERE id = @id
 	`
@@ -69,6 +71,7 @@ func (r *itemRepository) Update(item entities.Item) (int, error) {
 		sql.Named("quantity", item.Quantity),
 		sql.Named("price", item.Price),
 		sql.Named("is_per_item", item.IsPerItem),
+		sql.Named("user_id", userId),
 	).Scan(&id)
 
 	if err != nil {
@@ -78,9 +81,9 @@ func (r *itemRepository) Update(item entities.Item) (int, error) {
 	return id, nil
 }
 
-func (r *itemRepository) GetAll() (*[]entities.Item, error) {
-	query := `SELECT id, name, description, quantity, price, is_per_item FROM items`
-	rows, err := database.DB.QueryContext(context.Background(), query)
+func (r *itemRepository) GetAll(userId int) (*[]entities.Item, error) {
+	query := `SELECT id, name, description, quantity, price, is_per_item, user_id FROM items WHERE user_id = @userId`
+	rows, err := database.DB.QueryContext(context.Background(), query, sql.Named("userId", userId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query items: %w", err)
 	}
@@ -89,7 +92,7 @@ func (r *itemRepository) GetAll() (*[]entities.Item, error) {
 	var items []entities.Item
 	for rows.Next() {
 		var item entities.Item
-		err := rows.Scan(&item.Id, &item.Name, &item.Description, &item.Quantity, &item.Price, &item.IsPerItem)
+		err := rows.Scan(&item.Id, &item.Name, &item.Description, &item.Quantity, &item.Price, &item.IsPerItem, &item.UserId)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
@@ -99,9 +102,9 @@ func (r *itemRepository) GetAll() (*[]entities.Item, error) {
 	return &items, nil
 }
 
-func (r *itemRepository) GetById(id int) (*entities.Item, error) {
-	query := `SELECT id, name, description, quantity, price, is_per_item FROM items WHERE id = @p1`
-	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("p1", id))
+func (r *itemRepository) GetById(id int, userId int) (*entities.Item, error) {
+	query := `SELECT id, name, description, quantity, price, is_per_item, user_id FROM items WHERE id = @id AND user_id = @userId`
+	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId))
 
 	var item entities.Item
 	err := row.Scan(&item.Id, &item.Name, &item.Description, &item.Quantity, &item.Price, &item.IsPerItem)
@@ -112,9 +115,9 @@ func (r *itemRepository) GetById(id int) (*entities.Item, error) {
 	return &item, nil
 }
 
-func (r *itemRepository) DeleteById(id int) (int, error) {
-	query := "DELETE FROM items WHERE id = @id"
-	err := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id)).Scan(&id)
+func (r *itemRepository) DeleteById(id int, userId int) (int, error) {
+	query := "DELETE FROM items WHERE id = @id AND user_id = @userId"
+	err := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId)).Scan(&id)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to delete item: %w", err)

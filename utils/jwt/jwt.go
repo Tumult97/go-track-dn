@@ -3,8 +3,10 @@ package jwt
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
 	entities "tracker/models/entities"
@@ -96,10 +98,39 @@ func ValidateToken(tokenString string) (*jwtModels.UserClaims, error) {
 	return claims, nil
 }
 
+func GetUserTokenFromContext(context *gin.Context) (*string, error) {
+	authHeader := context.GetHeader("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("auth header is empty")
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return nil, fmt.Errorf("authorization header format must be Bearer {token}")
+	}
+
+	token := &parts[1]
+
+	return token, nil
+}
+
 func ExtractUserID(tokenString string) (int, error) {
 	claims, err := ValidateToken(tokenString)
 	if err != nil {
 		return 0, err
 	}
 	return claims.UserID, nil
+}
+
+func ExtractUserIDFromContext(c *gin.Context) (int, error) {
+	tokenString, err := GetUserTokenFromContext(c)
+
+	if err != nil || tokenString == nil {
+		return 0, err
+	}
+
+	// * dereferences the pointer from tokenstring
+	// Using * in a function definition makes it a nullable pointer variable
+	// adding & to a non pointer variable makes it a pointer variable
+	return ExtractUserID(*tokenString)
 }

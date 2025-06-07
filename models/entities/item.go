@@ -7,4 +7,5 @@ type Item struct {
 	Quantity    *string `json:"quantity"`
 	Price       float64 `json:"price"`
 	IsPerItem   bool    `json:"isPerItem"`
+	UserId      *int    `json:"userId"`
 }
