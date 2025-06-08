@@ -4,7 +4,7 @@ on:
   label:
     types: [created, edited]
   pull_request:
-    branches: ['main']
+    branches: ['main', 'develop']
 
 env:
   PROJECT_NAME: "tracker-go"
