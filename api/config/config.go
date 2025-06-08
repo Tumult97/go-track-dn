@@ -19,7 +19,8 @@ func registerItemController(router *gin.RouterGroup) {
 
 	router.GET(controllerEndpoint, controllers.GetItems)
 	router.GET(controllerEndpoint+"/:id", controllers.GetItemById)
-	router.POST(controllerEndpoint, controllers.PostItems)
+	router.POST(controllerEndpoint, controllers.CreateItem)
+	router.PUT(controllerEndpoint, controllers.UpdateItem)
 	router.DELETE(controllerEndpoint+"/:id", controllers.DeleteItemById)
 }
 
