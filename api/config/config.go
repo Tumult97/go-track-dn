@@ -7,7 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterItemController(router *gin.RouterGroup) {
+func registerAuthController(router *gin.Engine) {
+	const authEndpoint = "/auth"
+
+	router.POST(authEndpoint+"/register", controllers.Register)
+	router.POST(authEndpoint+"/login", controllers.Login)
+}
+
+func registerItemController(router *gin.RouterGroup) {
 	const controllerEndpoint = "/items"
 
 	router.GET(controllerEndpoint, controllers.GetItems)
@@ -16,24 +23,27 @@ func RegisterItemController(router *gin.RouterGroup) {
 	router.DELETE(controllerEndpoint+"/:id", controllers.DeleteItemById)
 }
 
-func RegisterAuthController(router *gin.Engine) {
-	const authEndpoint = "/auth"
-
-	router.POST(authEndpoint+"/register", controllers.Register)
-	router.POST(authEndpoint+"/login", controllers.Login)
-}
-
-func RegisterProfileController(router *gin.RouterGroup) {
+func registerProfileController(router *gin.RouterGroup) {
 	router.GET("/profile", controllers.GetProfile)
 }
 
+func registerLocationController(router *gin.RouterGroup) {
+	controllerEndpoint := "/location"
+	router.GET(controllerEndpoint, controllers.GetLocations)
+	router.GET(controllerEndpoint+"/:id", controllers.GetLocationById)
+	router.POST(controllerEndpoint, controllers.CreateLocation)
+	router.PUT(controllerEndpoint, controllers.UpdateLocation)
+	router.DELETE(controllerEndpoint+"/:id", controllers.DeleteLocation)
+}
+
 func RegisterControllers(router *gin.Engine) {
-	RegisterAuthController(router)
+	registerAuthController(router)
 
 	protected := router.Group("")
 	protected.Use(middleware.AuthMiddleware())
 	{
-		RegisterProfileController(protected)
-		RegisterItemController(protected)
+		registerProfileController(protected)
+		registerItemController(protected)
+		registerLocationController(protected)
 	}
 }

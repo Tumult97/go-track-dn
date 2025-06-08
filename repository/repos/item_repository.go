@@ -103,7 +103,7 @@ func (r *itemRepository) GetAll(userId int) (*[]entities.Item, error) {
 }
 
 func (r *itemRepository) GetById(id int, userId int) (*entities.Item, error) {
-	query := `SELECT id, name, description, quantity, price, is_per_item, user_id FROM items WHERE id = @id AND user_id = @userId`
+	query := `SELECT TOP(1) id, name, description, quantity, price, is_per_item, user_id FROM items WHERE id = @id AND user_id = @userId`
 	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId))
 
 	var item entities.Item
