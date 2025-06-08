@@ -10,8 +10,8 @@ import (
 )
 
 type ILocationRepository interface {
-	Create(location entities.Location) (int, error)
-	Update(location entities.Location) (int, error)
+	Create(location *entities.Location) (*entities.Location, error)
+	Update(location *entities.Location) (*entities.Location, error)
 	GetById(id int, userId int) (*entities.Location, error)
 	GetAll(userId int) (*[]entities.Location, error)
 	DeleteById(id int, userId int) (int, error)
@@ -23,7 +23,7 @@ func NewLocationRepository() ILocationRepository {
 	return &locationRepository{}
 }
 
-func (repo *locationRepository) Create(location entities.Location) (int, error) {
+func (repo *locationRepository) Create(location *entities.Location) (*entities.Location, error) {
 	query := `
 	    INSERT INTO dbo.location
 		(
@@ -56,17 +56,19 @@ func (repo *locationRepository) Create(location entities.Location) (int, error) 
 		sql.Named("street", location.AddressStreet),
 		sql.Named("suburb", location.AddressSuburb),
 		sql.Named("city", location.AddressCity),
-		sql.Named("userId", location.UserID),
+		sql.Named("userId", location.UserId),
 	).Scan(&id)
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert location: %w", err)
+		return nil, fmt.Errorf("failed to insert location: %w", err)
 	}
 
-	return id, nil
+	location.Id = id
+
+	return location, nil
 }
 
-func (repo *locationRepository) Update(location entities.Location) (int, error) {
+func (repo *locationRepository) Update(location *entities.Location) (*entities.Location, error) {
 	query := `
 		UPDATE dbo.location
 		SET name = @name,
@@ -88,15 +90,15 @@ func (repo *locationRepository) Update(location entities.Location) (int, error) 
 		sql.Named("street", location.AddressStreet),
 		sql.Named("suburb", location.AddressSuburb),
 		sql.Named("city", location.AddressCity),
-		sql.Named("id", location.ID),
-		sql.Named("userId", location.UserID),
+		sql.Named("id", location.Id),
+		sql.Named("userId", location.UserId),
 	).Scan(&id)
 
 	if err != nil || id == 0 {
-		return 0, fmt.Errorf("failed to update location: %w", err)
+		return nil, fmt.Errorf("failed to update location: %w", err)
 	}
 
-	return id, nil
+	return location, nil
 }
 
 func (repo *locationRepository) GetById(id int, userId int) (*entities.Location, error) {
@@ -106,14 +108,14 @@ func (repo *locationRepository) GetById(id int, userId int) (*entities.Location,
 
 	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId))
 
-	err := row.Scan(&location.ID,
+	err := row.Scan(&location.Id,
 		&location.Name,
 		&location.Description,
 		&location.AddressHome,
 		&location.AddressStreet,
 		&location.AddressSuburb,
 		&location.AddressCity,
-		&location.UserID)
+		&location.UserId)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch location by id: %w", err)
@@ -138,14 +140,14 @@ func (repo *locationRepository) GetAll(userId int) (*[]entities.Location, error)
 		var location entities.Location
 
 		err := rows.Scan(
-			&location.ID,
+			&location.Id,
 			&location.Name,
 			&location.Description,
 			&location.AddressHome,
 			&location.AddressStreet,
 			&location.AddressSuburb,
 			&location.AddressCity,
-			&location.UserID)
+			&location.UserId)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan location: %w", err)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	entities "tracker/models/entities"
+	"tracker/utils/helpers"
 	"tracker/utils/jwt"
 
 	"tracker/repository/repos"
@@ -12,22 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var repo = repos.NewItemRepository()
-
-func getUserId(context *gin.Context) (int, error) {
-	userId, err := jwt.ExtractUserIDFromContext(context)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return userId, nil
-}
+var itemReposiotory = repos.NewItemRepository()
 
 func GetItems(context *gin.Context) {
-	userId, _ := getUserId(context)
+	userId, _ := jwt.ExtractUserIDFromContext(context)
 
-	items, err := repo.GetAll(userId)
+	items, err := itemReposiotory.GetAll(userId)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -39,42 +29,15 @@ func GetItems(context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, items)
 }
 
-func PostItems(context *gin.Context) {
-	userId, _ := getUserId(context)
-	var newItem entities.Item
-
-	if err := context.BindJSON(&newItem); err != nil {
-		return
-	}
-
-	var id int
-	var err error
-
-	if newItem.Id != 0 {
-		id, err = repo.Update(newItem, userId)
-	} else {
-		id, err = repo.Create(newItem, userId)
-	}
-
-	if err != nil || id == 0 {
-		context.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Error saving item: %s", err.Error()),
-		})
-		return
-	}
-
-	context.IndentedJSON(http.StatusCreated, newItem)
-}
-
 func GetItemById(context *gin.Context) {
-	userId, _ := getUserId(context)
+	userId, _ := jwt.ExtractUserIDFromContext(context)
 	id, err := strconv.Atoi(context.Param("id"))
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Parameter Id requried a valid number. %s", err.Error())})
 	}
 
-	item, err := repo.GetById(id, userId)
+	item, err := itemReposiotory.GetById(id, userId)
 
 	if item == nil || err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "Item not found."})
@@ -84,8 +47,20 @@ func GetItemById(context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, item)
 }
 
+func CreateItem(context *gin.Context) {
+	helpers.HandleEntitySave(
+		context,
+		itemReposiotory.Create)
+}
+
+func UpdateItem(context *gin.Context) {
+	helpers.HandleEntitySave(
+		context,
+		itemReposiotory.Update)
+}
+
 func DeleteItemById(context *gin.Context) {
-	userId, _ := getUserId(context)
+	userId, _ := jwt.ExtractUserIDFromContext(context)
 	id, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
 		context.IndentedJSON(http.StatusBadRequest, gin.H{
@@ -94,7 +69,7 @@ func DeleteItemById(context *gin.Context) {
 		return
 	}
 
-	id, err = repo.DeleteById(id, userId)
+	id, err = itemReposiotory.DeleteById(id, userId)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{

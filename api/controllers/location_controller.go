@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"tracker/models/entities"
+	"tracker/utils/helpers"
 	"tracker/utils/jwt"
 
 	"tracker/repository/repos"
@@ -48,57 +48,15 @@ func GetLocationById(context *gin.Context) {
 }
 
 func CreateLocation(context *gin.Context) {
-	userId, _ := jwt.ExtractUserIDFromContext(context)
-
-	var newLocation entities.Location
-
-	err := context.BindJSON(&newLocation)
-
-	if err != nil {
-		context.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	newLocation.UserID = userId
-
-	id, err := locationRepository.Create(newLocation)
-
-	if err != nil || id == 0 {
-		context.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Error saving item: %s", err.Error()),
-		})
-		return
-	}
-
-	newLocation.ID = id
-
-	context.IndentedJSON(http.StatusCreated, newLocation)
+	helpers.HandleEntitySave(
+		context,
+		locationRepository.Create)
 }
 
 func UpdateLocation(context *gin.Context) {
-	userId, _ := jwt.ExtractUserIDFromContext(context)
-
-	var updatedLocation entities.Location
-
-	err := context.BindJSON(&updatedLocation)
-
-	if err != nil {
-		context.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	updatedLocation.UserID = userId
-
-	id, err := locationRepository.Update(updatedLocation)
-
-	if err != nil || id == 0 {
-		context.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Error saving item: %s", err.Error()),
-		})
-		return
-	}
-
-	context.IndentedJSON(http.StatusAccepted, updatedLocation)
+	helpers.HandleEntitySave(
+		context,
+		locationRepository.Update)
 }
 
 func DeleteLocation(context *gin.Context) {

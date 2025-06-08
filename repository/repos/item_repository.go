@@ -10,8 +10,8 @@ import (
 )
 
 type IItemRepository interface {
-	Create(item entities.Item, userId int) (int, error)
-	Update(item entities.Item, userId int) (int, error)
+	Create(item *entities.Item) (*entities.Item, error)
+	Update(item *entities.Item) (*entities.Item, error)
 	GetAll(userId int) (*[]entities.Item, error)
 	GetById(id int, userId int) (*entities.Item, error)
 	DeleteById(id int, userId int) (int, error)
@@ -23,7 +23,7 @@ func NewItemRepository() IItemRepository {
 	return &itemRepository{}
 }
 
-func (r *itemRepository) Create(item entities.Item, userId int) (int, error) {
+func (r *itemRepository) Create(item *entities.Item) (*entities.Item, error) {
 	query := `
 		INSERT INTO items (name, description, quantity, price, is_per_item, user_id)
 		OUTPUT INSERTED.id
@@ -38,17 +38,19 @@ func (r *itemRepository) Create(item entities.Item, userId int) (int, error) {
 		sql.Named("p3", item.Quantity),
 		sql.Named("p4", item.Price),
 		sql.Named("p5", item.IsPerItem),
-		sql.Named("p6", userId),
+		sql.Named("p6", item.UserId),
 	).Scan(&id)
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert item: %w", err)
+		return nil, fmt.Errorf("failed to insert item: %w", err)
 	}
 
-	return id, nil
+	item.Id = id
+
+	return item, nil
 }
 
-func (r *itemRepository) Update(item entities.Item, userId int) (int, error) {
+func (r *itemRepository) Update(item *entities.Item) (*entities.Item, error) {
 	fmt.Println("Inside Update method")
 	query := `
 		UPDATE dbo.items
@@ -71,14 +73,14 @@ func (r *itemRepository) Update(item entities.Item, userId int) (int, error) {
 		sql.Named("quantity", item.Quantity),
 		sql.Named("price", item.Price),
 		sql.Named("is_per_item", item.IsPerItem),
-		sql.Named("user_id", userId),
+		sql.Named("user_id", item.UserId),
 	).Scan(&id)
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to update item: %w", err)
+		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
 
-	return id, nil
+	return item, nil
 }
 
 func (r *itemRepository) GetAll(userId int) (*[]entities.Item, error) {

@@ -1,12 +1,11 @@
 package entities
 
 type Item struct {
-	Id          int     `json:"id"`
+	BaseEntity
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Quantity    *string `json:"quantity"`
 	Price       float64 `json:"price"`
 	IsPerItem   bool    `json:"isPerItem"`
-	UserId      int     `json:"userId"`
 	LocationId  *int    `json:"locationId"`
 }
