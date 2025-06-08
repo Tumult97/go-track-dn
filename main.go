@@ -28,7 +28,7 @@ func main() {
 	config.RegisterControllers(router)
 
 	log.Printf("Server starting on localhost:5100")
-	if err := router.Run("localhost:5100"); err != nil {
+	if err := router.Run("localhost:6900"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
