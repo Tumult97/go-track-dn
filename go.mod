@@ -16,7 +16,6 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
 	tracker/api v0.0.0-00010101000000-000000000000
-	tracker/models v0.0.0-00010101000000-000000000000
 	tracker/repository v0.0.0-00010101000000-000000000000
 	tracker/utils v0.0.0-00010101000000-000000000000
 )
@@ -53,4 +52,5 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	tracker/middleware v0.0.0-00010101000000-000000000000 // indirect
+	tracker/models v0.0.0-00010101000000-000000000000 // indirect
 )
