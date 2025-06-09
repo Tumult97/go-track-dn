@@ -14,6 +14,7 @@ replace tracker/middleware => ./middleware
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/joho/godotenv v1.5.1
 	tracker/api v0.0.0-00010101000000-000000000000
 	tracker/models v0.0.0-00010101000000-000000000000
 	tracker/repository v0.0.0-00010101000000-000000000000

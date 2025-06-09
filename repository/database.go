@@ -5,16 +5,16 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-const connString = "server=localhost;database=tracker;trusted_connection=yes;encrypt=disable"
-
 var DB *sql.DB
 
 func Connect() {
-	dsn := connString
+	dsn := os.Getenv("DB_CONN_STRING")
+	fmt.Println(dsn)
 	if dsn == "" {
 		log.Fatal("DATABASE_URL environment variable is not set")
 	}

@@ -1,16 +1,8 @@
 package jwt
 
 import (
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
 )
-
-type Config struct {
-	Secret     string
-	Expiration time.Duration
-	Issuer     string
-}
 
 type UserClaims struct {
 	UserID    int    `json:"user_id"`

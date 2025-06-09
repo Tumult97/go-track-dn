@@ -3,6 +3,9 @@ package jwt
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,25 +22,31 @@ var (
 	issuerName    string        = "tracker-api"
 )
 
-func Init(config jwtModels.Config) {
-	if config.Secret != "" {
-		secretKey = []byte(config.Secret)
-	} else {
-		secretKey = []byte("your_jwt_secret_key_change_this_in_production")
+func Init() {
+	secretString := os.Getenv("JWT_SECRET")
+	if secretString == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	secretKey = []byte(secretString)
+
+	expireyHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRATION_HOURS"))
+
+	if err != nil {
+		log.Fatal("TOKEN_EXPIRATION_HOURS environment variable is not set")
 	}
 
-	if config.Expiration > 0 {
-		tokenLifetime = config.Expiration
-	}
+	tokenLifetime = time.Duration(expireyHours) * time.Hour
 
-	if config.Issuer != "" {
-		issuerName = config.Issuer
+	issuerName = os.Getenv("TOKEN_ISSUER")
+
+	if issuerName == "" {
+		log.Fatal("TOKEN_ISSUER environment variable is not set")
 	}
 }
 
 func GenerateToken(user entities.User) (string, error) {
 	if len(secretKey) == 0 {
-		Init(jwtModels.Config{})
+		Init()
 	}
 
 	expirationTime := time.Now().Add(tokenLifetime)
@@ -68,7 +77,7 @@ func GenerateToken(user entities.User) (string, error) {
 
 func ValidateToken(tokenString string) (*jwtModels.UserClaims, error) {
 	if len(secretKey) == 0 {
-		Init(jwtModels.Config{})
+		Init()
 	}
 
 	token, err := jwt.ParseWithClaims(
