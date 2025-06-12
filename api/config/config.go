@@ -12,6 +12,7 @@ func registerAuthController(router *gin.Engine) {
 
 	router.POST(authEndpoint+"/register", controllers.Register)
 	router.POST(authEndpoint+"/login", controllers.Login)
+	router.POST(authEndpoint+"/refresh", controllers.RefreshToken)
 }
 
 func registerItemController(router *gin.RouterGroup) {
