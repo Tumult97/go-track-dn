@@ -13,21 +13,19 @@ import (
 	database "tracker/repository"
 )
 
-// IUserRepository interface defines methods for user management
 type IUserRepository interface {
 	CreateUser(user entities.User) (int, error)
 	GetUserByEmail(email string) (*entities.User, error)
+	GetUserByID(id int) (*entities.User, error)
 	ValidateCredentials(email, password string) (*entities.User, error)
 }
 
 type userRepository struct{}
 
-// NewUserRepository creates a new instance of the user repository
 func NewUserRepository() IUserRepository {
 	return &userRepository{}
 }
 
-// CreateUser inserts a new user into the database
 func (r *userRepository) CreateUser(user entities.User) (int, error) {
 	// Hash the password before storing
 	hashedPassword, err := hashPassword(user.Password)
@@ -57,10 +55,9 @@ func (r *userRepository) CreateUser(user entities.User) (int, error) {
 	return id, nil
 }
 
-// GetUserByEmail retrieves a user by their email address
 func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 	query := `SELECT id, first_name, last_name, email, password, created_at FROM users WHERE email = @userEmail`
-	
+
 	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("userEmail", email))
 
 	var user entities.User
@@ -75,7 +72,23 @@ func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 	return &user, nil
 }
 
-// ValidateCredentials checks if the provided email and password are valid
+func (r *userRepository) GetUserByID(id int) (*entities.User, error) {
+	query := `SELECT id, first_name, last_name, email, password, created_at FROM users WHERE id = @userID`
+
+	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("userID", id))
+
+	var user entities.User
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found with id %d", id)
+		}
+		return nil, fmt.Errorf("failed to fetch user by id: %w", err)
+	}
+
+	return &user, nil
+}
+
 func (r *userRepository) ValidateCredentials(email, password string) (*entities.User, error) {
 	// Get user by email
 	user, err := r.GetUserByEmail(email)
@@ -94,7 +107,6 @@ func (r *userRepository) ValidateCredentials(email, password string) (*entities.
 	return user, nil
 }
 
-// Helper function to hash passwords
 func hashPassword(password string) (string, error) {
 	// Generate a bcrypt hash with cost factor 12
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), 12)
@@ -104,8 +116,6 @@ func hashPassword(password string) (string, error) {
 	return string(hashedBytes), nil
 }
 
-// Helper function to compare passwords
 func comparePasswords(hashedPassword, plainPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
 }
-

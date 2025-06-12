@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"tracker/api/config"
 	database "tracker/repository"
 	"tracker/utils/jwt"
@@ -17,7 +18,8 @@ func init() {
 func main() {
 	jwt.Init()
 
-	gin.SetMode(gin.ReleaseMode)
+	mode := os.Getenv("API_MODE")
+	gin.SetMode(mode)
 
 	database.Connect()
 	defer database.Close()
@@ -26,8 +28,8 @@ func main() {
 
 	config.RegisterControllers(router)
 
-	log.Printf("Server starting on localhost:8080")
-	if err := router.Run("localhost:8080"); err != nil {
+	log.Printf("Server starting on localhost:5100")
+	if err := router.Run("localhost:5100"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

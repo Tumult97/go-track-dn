@@ -7,20 +7,20 @@ import (
 
 	jwtModels "tracker/models/jwt"
 	"tracker/utils/jwt"
+	tc "tracker/utils/trycatch"
 )
 
 const UserKey = "user"
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString, err := jwt.GetUserTokenFromContext(c)
-
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		defer tc.Catch(func(err error) {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
-			return
-		}
+		})
+
+		tokenString := tc.Try(jwt.GetUserTokenFromContext(c))
 
 		if tokenString == nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -29,13 +29,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		claims, err := jwt.ValidateToken(*tokenString)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Invalid or expired token",
-			})
-			return
-		}
+		claims := tc.Try(jwt.ValidateAccessToken(*tokenString))
 
 		c.Set(UserKey, claims)
 

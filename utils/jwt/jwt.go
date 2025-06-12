@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	secretKey     []byte
-	tokenLifetime time.Duration = 24 * time.Hour
-	issuerName    string        = "tracker-api"
+	secretKey            []byte
+	accessTokenLifetime  time.Duration = 15 * time.Minute
+	refreshTokenLifetime time.Duration = 7 * 24 * time.Hour // 7 days
+	issuerName           string        = "tracker-api"
 )
 
 func Init() {
@@ -29,33 +30,39 @@ func Init() {
 	}
 	secretKey = []byte(secretString)
 
-	expireyHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRATION_HOURS"))
-
-	if err != nil {
-		log.Fatal("TOKEN_EXPIRATION_HOURS environment variable is not set")
+	// Check for custom token lifetimes from environment
+	if accessExp := os.Getenv("ACCESS_TOKEN_EXPIRATION_MINUTES"); accessExp != "" {
+		if minutes, err := strconv.Atoi(accessExp); err == nil {
+			accessTokenLifetime = time.Duration(minutes) * time.Minute
+		}
 	}
 
-	tokenLifetime = time.Duration(expireyHours) * time.Hour
+	if refreshExp := os.Getenv("REFRESH_TOKEN_EXPIRATION_DAYS"); refreshExp != "" {
+		if days, err := strconv.Atoi(refreshExp); err == nil {
+			refreshTokenLifetime = time.Duration(days) * 24 * time.Hour
+		}
+	}
 
 	issuerName = os.Getenv("TOKEN_ISSUER")
-
 	if issuerName == "" {
-		log.Fatal("TOKEN_ISSUER environment variable is not set")
+		issuerName = "tracker-api" // default value
 	}
 }
 
-func GenerateToken(user entities.User) (string, error) {
+// GenerateAccessToken creates a short-lived access token
+func GenerateAccessToken(user entities.User) (string, error) {
 	if len(secretKey) == 0 {
 		Init()
 	}
 
-	expirationTime := time.Now().Add(tokenLifetime)
+	expirationTime := time.Now().Add(accessTokenLifetime)
 
 	claims := &jwtModels.UserClaims{
 		UserID:    user.ID,
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
+		TokenType: jwtModels.AccessToken,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -73,6 +80,56 @@ func GenerateToken(user entities.User) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+// GenerateRefreshToken creates a long-lived refresh token
+func GenerateRefreshToken(user entities.User) (string, error) {
+	if len(secretKey) == 0 {
+		Init()
+	}
+
+	expirationTime := time.Now().Add(refreshTokenLifetime)
+
+	claims := &jwtModels.RefreshTokenClaims{
+		UserID:    user.ID,
+		TokenType: jwtModels.RefreshToken,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    issuerName,
+			Subject:   fmt.Sprintf("%d", user.ID),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// GenerateTokenPair creates both access and refresh tokens
+func GenerateTokenPair(user entities.User) (accessToken, refreshToken string, err error) {
+	accessToken, err = GenerateAccessToken(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err = GenerateRefreshToken(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+// GenerateToken (legacy function) - maintains backward compatibility
+func GenerateToken(user entities.User) (string, error) {
+	return GenerateAccessToken(user)
 }
 
 func ValidateToken(tokenString string) (*jwtModels.UserClaims, error) {
@@ -142,4 +199,57 @@ func ExtractUserIDFromContext(c *gin.Context) (int, error) {
 	// Using * in a function definition makes it a nullable pointer variable
 	// adding & to a non pointer variable makes it a pointer variable
 	return ExtractUserID(*tokenString)
+}
+
+// ValidateRefreshToken validates a refresh token and returns the claims
+func ValidateRefreshToken(tokenString string) (*jwtModels.RefreshTokenClaims, error) {
+	if len(secretKey) == 0 {
+		Init()
+	}
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&jwtModels.RefreshTokenClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return secretKey, nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	claims, ok := token.Claims.(*jwtModels.RefreshTokenClaims)
+	if !ok {
+		return nil, errors.New("invalid refresh token claims")
+	}
+
+	// Verify this is actually a refresh token
+	if claims.TokenType != jwtModels.RefreshToken {
+		return nil, errors.New("token is not a refresh token")
+	}
+
+	return claims, nil
+}
+
+// ValidateAccessToken specifically validates access tokens
+func ValidateAccessToken(tokenString string) (*jwtModels.UserClaims, error) {
+	claims, err := ValidateToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify this is actually an access token
+	if claims.TokenType != jwtModels.AccessToken {
+		return nil, errors.New("token is not an access token")
+	}
+
+	return claims, nil
 }
