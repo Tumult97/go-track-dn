@@ -88,7 +88,6 @@ func Login(c *gin.Context) {
 		CreatedAt:    user.CreatedAt,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		Token:        accessToken, // Backward compatibility
 		Message:      "Login successful",
 	})
 }

@@ -11,7 +11,6 @@ type AuthResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 	AccessToken  string    `json:"access_token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
-	Token        string    `json:"token,omitempty"` // Keep for backward compatibility
 	Message      string    `json:"message"`
 }
 
@@ -21,4 +20,3 @@ type RefreshTokenResponse struct {
 	RefreshToken string `json:"refresh_token,omitempty"` // Optional: new refresh token for rotation
 	Message      string `json:"message"`
 }
-
