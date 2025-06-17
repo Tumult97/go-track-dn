@@ -1,5 +1,12 @@
-class RoutesConstants {
+class Routes {
   static const defaultRoute = "/";
-  static const signInRoute = "/sign-in";
-  static const registerRoute = "/sign-in";
+  static const home = "/home";
+  static const signIn = "/sign-in";
+  static const register = "/register";
+}
+
+class RouteNames {
+  static const home = "home";
+  static const signIn = "signIn";
+  static const register = "register";
 }

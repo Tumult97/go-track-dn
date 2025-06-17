@@ -4,7 +4,7 @@ class StorageKeys {
   static String authTokenKey = "AUTH_TOKEN";
   static String refreshTokenKey = "AUTH_TOKEN";
 
-  static AndroidOptions androidOptions = const AndroidOptions(
+  static AndroidOptions androidOptions = AndroidOptions(
     encryptedSharedPreferences: true,
   );
 }
