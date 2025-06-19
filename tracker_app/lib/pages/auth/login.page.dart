@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../http/auth.service.dart';
 import '../../router/routes.constants.dart';
+import '../../services/http/auth.service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,9 +11,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _emailController = TextEditingController(text: "bronwyn0225@gmail.com");
-
   final _passwordController = TextEditingController(text: "Bella0225@");
 
   bool _isPasswordVisible = false;

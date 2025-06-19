@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tracker_app/http/auth.service.dart';
 import 'package:tracker_app/pages/auth/login.page.dart';
-import 'package:tracker_app/pages/dashboard.page.dart';
 import 'package:tracker_app/router/routes.constants.dart';
-
 import '../pages/auth/register.page.dart';
+import '../services/http/auth.service.dart';
 
 class AppRouter {
   static final router = GoRouter(

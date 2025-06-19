@@ -1,8 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:tracker_app/constants/storage-keys.constants.dart';
-import 'package:tracker_app/http/http-client-builder.dart';
-import 'package:tracker_app/models/auth-response.model.dart';
+
+import '../../constants/storage-keys.constants.dart';
+import '../../models/auth-response.model.dart';
+import '../../models/register-response.model.dart';
+import 'http-client-builder.dart';
 
 class AuthService {
   static final _controller = "auth";
@@ -16,7 +18,12 @@ class AuthService {
         return false;
       }
 
-      return !JwtDecoder.isExpired(authToken);
+      if (JwtDecoder.isExpired(authToken)) {
+        await _storage.delete(key: StorageKeys.authTokenKey);
+        return false;
+      }
+
+      return true;
     } catch (e) {
       return false;
     }
@@ -35,7 +42,11 @@ class AuthService {
           .withBody(loginRequest)
           .post();
 
-      var response = AuthResponse.fromJson(jsonResponse);
+      if (!jsonResponse.isSuccess) {
+        throw Exception(jsonResponse.message);
+      }
+
+      var response = AuthResponse.fromJson(jsonResponse.data!);
 
       try {
         await _storage.delete(key: StorageKeys.authTokenKey);
@@ -64,24 +75,51 @@ class AuthService {
       'refresh_token': refreshToken
     };
 
-    var jsonResponse = await HttpClientBuilder()
+    var response = await HttpClientBuilder()
         .withUrl("$_controller/refresh")
         .isAnonymous()
         .withBody(request)
         .post();
 
-    var response = AuthResponse.fromJson(jsonResponse);
+    if(!response.isSuccess){
+      return false;
+    }
+
+    var responseData = AuthResponse.fromJson(response.data!);
 
     try {
       await _storage.delete(key: StorageKeys.authTokenKey);
-      await _storage.write(key: StorageKeys.authTokenKey, value: response.accessToken);
+      await _storage.write(key: StorageKeys.authTokenKey, value: responseData.accessToken);
 
       await _storage.delete(key: StorageKeys.refreshTokenKey);
-      await _storage.write(key: StorageKeys.refreshTokenKey, value: response.refreshToken);
+      await _storage.write(key: StorageKeys.refreshTokenKey, value: responseData.refreshToken);
     } catch (storageError) {
       return false;
     }
 
     return true;
+  }
+
+  static Future<RegisterResponse> register(String firstName, String lastName, String email, String password) async {
+    var request = {
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
+      'password': password,
+    };
+
+    var jsonResponse = await HttpClientBuilder()
+        .withUrl('$_controller/register')
+        .withBody(request)
+        .isAnonymous()
+        .post();
+
+    if (!jsonResponse.isSuccess) {
+      throw Exception(jsonResponse.message);
+    }
+
+    var response = RegisterResponse.fromJson(jsonResponse.data!);
+
+    return response;
   }
 }
