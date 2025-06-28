@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:tracker_app/constants/storage-keys.constants.dart';
+import 'package:tracker_app/enums/method-type.dart';
 import 'package:tracker_app/models/refresh-token-response.model.dart';
 import 'package:tracker_app/services/local-storage.service.dart';
 
@@ -14,6 +14,7 @@ class HttpClientBuilder {
   bool _useAuth = true;
   Map<String, dynamic>? _body;
   bool _hasRetried = false;
+  MethodType? _methodType;
 
   static final _storageService = LocalStorageService();
 
@@ -48,70 +49,68 @@ class HttpClientBuilder {
     _body = body;
     return this;
   }
-
-  Future<RequestResponse<Map<String, dynamic>>> get([String? url]) async {
-    _url = _buildUrl(url);
-
-    final response = await http.get(Uri.parse(_url!), headers: _headers);
-
-    if (response.statusCode == 401 && !_hasRetried) {
-      var refreshResponse = await _handleUnauthorizedResponse();
-      if (refreshResponse.isSuccess) {
-        return get(_url);
-      }
-      return RequestResponse.error("Failed to refresh token", 401);
-    }
-
-    return _getJsonFromResponse(response);
+  
+  HttpClientBuilder withMethodType(MethodType methodType) {
+    _methodType = methodType;
+    return this;
   }
 
-  Future<RequestResponse<Map<String, dynamic>>> post([String? url]) async {
-    _url = _buildUrl(url);
-
-    var response = await http.post(
-        Uri.parse(_url!),
-        body: jsonEncode(_body),
-        headers: _headers);
-
-    if (response.statusCode == 401 && !_hasRetried) {
-      var refreshResponse = await _handleUnauthorizedResponse();
-      if (refreshResponse.isSuccess) {
-        return post(_url);
-      }
-      return RequestResponse.error("Failed to refresh token", 401);
-    }
-
-    return _getJsonFromResponse(response);
+  Future<RequestResponse<Map<String, dynamic>>> get([String? url]) {
+    return _performRequest(MethodType.GET, url);
   }
 
-  Future<RequestResponse<Map<String, dynamic>>> put([String? url]) async {
-    _url = _buildUrl(url);
-
-    var response = await http.put(
-        Uri.parse(_url!),
-        body: _body,
-        headers: _headers);
-
-    if (response.statusCode == 401 && !_hasRetried) {
-      var refreshResponse = await _handleUnauthorizedResponse();
-      if (refreshResponse.isSuccess) {
-        return put(_url);
-      }
-      return RequestResponse.error("Failed to refresh token", 401);
-    }
-
-    return _getJsonFromResponse(response);
+  Future<RequestResponse<Map<String, dynamic>>> post([String? url]) {
+    return _performRequest(MethodType.POST, url);
   }
 
-  Future<RequestResponse<Map<String, dynamic>>> delete([String? url]) async {
-    _url = _buildUrl(url);
+  Future<RequestResponse<Map<String, dynamic>>> put([String? url]) {
+    return _performRequest(MethodType.PUT, url);
+  }
 
-    final response = await http.delete(Uri.parse(_url!), headers: _headers);
+  Future<RequestResponse<Map<String, dynamic>>> delete([String? url]) {
+  return _performRequest(MethodType.DELETE, url);
+}
+
+  Future<RequestResponse<Map<String, dynamic>>> execute([String? url]) {
+    if(_methodType == null){
+      throw Exception("Method type is required");
+    }
+
+    return _performRequest(_methodType!, url);
+  }
+
+  Future<RequestResponse<Map<String, dynamic>>> _performRequest(MethodType method, [String? url]) async {
+    _url = _buildUrl(url);
+    final uri = Uri.parse(_url!);
+    http.Response response;
+
+    if (_useAuth) {
+      await _populateAuthTokenHeader();
+    }
+
+    try {
+      switch (method) {
+        case MethodType.GET:
+          response = await http.get(uri, headers: _headers);
+          break;
+        case MethodType.POST:
+          response = await http.post(uri, headers: _headers, body: jsonEncode(_body));
+          break;
+        case MethodType.PUT:
+          response = await http.put(uri, headers: _headers, body: _body);
+          break;
+        case MethodType.DELETE:
+          response = await http.delete(uri, headers: _headers);
+          break;
+      }
+    } catch (e) {
+      return RequestResponse.error("Network error: $e", 500);
+    }
 
     if (response.statusCode == 401 && !_hasRetried) {
-      var refreshResponse = await _handleUnauthorizedResponse();
+      final refreshResponse = await _handleUnauthorizedResponse();
       if (refreshResponse.isSuccess) {
-        return delete(_url);
+        return _performRequest(method, _url);
       }
       return RequestResponse.error("Failed to refresh token", 401);
     }
@@ -184,6 +183,13 @@ class HttpClientBuilder {
       return RequestResponse.success(json.decode(response.body));
     } catch (storageError) {
       return RequestResponse.error("Failed to save authentication tokens: $storageError", 500);
+    }
+  }
+
+  Future _populateAuthTokenHeader() async {
+    var authToken = await _storageService.fetchValue(StorageKeys.authTokenKey);
+    if (authToken != null) {
+      _headers['Authorization'] = "Bearer $authToken";
     }
   }
 }
