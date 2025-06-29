@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tracker_app/pages/auth/login.page.dart';
+import 'package:tracker_app/pages/dashboard.page.dart';
 import 'package:tracker_app/router/routes.constants.dart';
 import '../pages/auth/register.page.dart';
 import '../services/http/auth.service.dart';
@@ -26,7 +27,7 @@ class AppRouter {
     routes: [
       GoRoute(
           path: Routes.defaultRoute,
-          builder: (context, state) => Placeholder(),
+          builder: (context, state) => Dashboard(),
       ),
       GoRoute(
           name: RouteNames.signIn,
@@ -41,7 +42,7 @@ class AppRouter {
       GoRoute(
         name: RouteNames.home,
         path: Routes.home,
-        builder: (context, state) => Placeholder(),
+        builder: (context, state) => Dashboard(),
       ),
     ]
   );

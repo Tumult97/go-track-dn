@@ -8,7 +8,7 @@ import 'package:tracker_app/services/local-storage.service.dart';
 
 import '../../models/common/http-response.model.ts.dart';
 
-class HttpClientBuilder {
+class HttpClientBuilder<T> {
   String? _url;
   Map<String, String> _queryParameters = {};
   bool _useAuth = true;
@@ -19,7 +19,7 @@ class HttpClientBuilder {
   static final _storageService = LocalStorageService();
 
   final Map<String,String> _headers = {
-    'Content-type' : 'application/json',
+    'Content-Type' : 'application/json',
     'Accept': 'application/json',
   };
 
@@ -49,7 +49,7 @@ class HttpClientBuilder {
     _body = body;
     return this;
   }
-  
+
   HttpClientBuilder withMethodType(MethodType methodType) {
     _methodType = methodType;
     return this;
@@ -84,23 +84,25 @@ class HttpClientBuilder {
     final uri = Uri.parse(_url!);
     http.Response response;
 
+    var headers = _headers;
+
     if (_useAuth) {
-      await _populateAuthTokenHeader();
+      headers = await _populateAuthTokenHeader();
     }
 
     try {
       switch (method) {
         case MethodType.GET:
-          response = await http.get(uri, headers: _headers);
+          response = await http.get(uri, headers: headers);
           break;
         case MethodType.POST:
-          response = await http.post(uri, headers: _headers, body: jsonEncode(_body));
+          response = await http.post(uri, headers: headers, body: jsonEncode(_body));
           break;
         case MethodType.PUT:
-          response = await http.put(uri, headers: _headers, body: _body);
+          response = await http.put(uri, headers: headers, body: jsonEncode(_body));
           break;
         case MethodType.DELETE:
-          response = await http.delete(uri, headers: _headers);
+          response = await http.delete(uri, headers: headers);
           break;
       }
     } catch (e) {
@@ -133,6 +135,10 @@ class HttpClientBuilder {
   }
 
   String _buildQueryParamString() {
+    if (_queryParameters.isEmpty) {
+      return "";
+    }
+
     var query = "?";
 
     _queryParameters.forEach((key, value) {
@@ -145,7 +151,15 @@ class HttpClientBuilder {
   RequestResponse<Map<String, dynamic>> _getJsonFromResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-        return RequestResponse.success(json.decode(response.body));
+        try {
+          final bodyJson = json.decode(response.body);
+          if (bodyJson is List) {
+            return RequestResponse.success({'data-list': bodyJson});
+          }
+          return RequestResponse.success(bodyJson);
+        } catch (e) {
+          return RequestResponse.error('JSON parsing error: $e', 500);
+        }
       default:
         return RequestResponse(httpStatusCode: response.statusCode, message: response.reasonPhrase);
     }
@@ -186,10 +200,12 @@ class HttpClientBuilder {
     }
   }
 
-  Future _populateAuthTokenHeader() async {
+  Future<Map<String, String>> _populateAuthTokenHeader() async {
+    var headers = _headers;
     var authToken = await _storageService.fetchValue(StorageKeys.authTokenKey);
     if (authToken != null) {
-      _headers['Authorization'] = "Bearer $authToken";
+      headers['Authorization'] = "Bearer $authToken";
     }
+    return headers;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../router/routes.constants.dart';
 import '../../services/http/auth.service.dart';
 
@@ -11,8 +12,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: "bronwyn0225@gmail.com");
-  final _passwordController = TextEditingController(text: "Bella0225@");
+  final _emailController = TextEditingController(text: "tristanvdm87@gmail.com");
+  final _passwordController = TextEditingController(text: "Tiberium-97@");
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
@@ -38,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
         _navigateToHome();
       } catch(e) {
         _showErrorMessage(e.toString());
+        throw Exception(e);
       } finally {
         setState(() {
           _isLoading = false;
@@ -47,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacementNamed(context, RouteNames.home);
+    context.goNamed(RouteNames.home);
   }
 
   void _showErrorMessage(String errorMsg) {
