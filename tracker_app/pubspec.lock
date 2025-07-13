@@ -41,14 +41,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
-  cupertino_icons:
-    dependency: "direct main"
+  crypto:
+    dependency: transitive
     description:
-      name: cupertino_icons
-      sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
+      name: crypto
+      sha256: "1e445881f28f22d6140f181e07737b22f1e099a5e1ff94b0af2f9e4a463f4855"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.8"
+    version: "3.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -140,10 +140,18 @@ packages:
     dependency: "direct main"
     description:
       name: go_router
-      sha256: f222e12c5360b0c90aae5d33e6b351a6789d4aa1c97b32691b4a30946fc91813
+      sha256: c489908a54ce2131f1d1b7cc631af9c1a06fac5ca7c449e959192089f9489431
       url: "https://pub.dev"
     source: hosted
-    version: "15.2.0"
+    version: "16.0.0"
+  google_fonts:
+    dependency: "direct main"
+    description:
+      name: google_fonts
+      sha256: b1ac0fe2832c9cc95e5e88b57d627c5e68c223b9657f4b96e1487aa9098c7b82
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.1"
   http:
     dependency: "direct main"
     description:

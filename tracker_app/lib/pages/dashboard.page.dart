@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:tracker_app/router/routes.constants.dart';
 import 'package:tracker_app/services/item.service.dart';
 
 import '../components/item-card.dart';
@@ -26,8 +28,15 @@ class _DashboardState extends State<Dashboard> {
     String test = json.encode(_items).toString();
 
     return Scaffold(
-      body: ListView(
-        children: _buildItemCards(),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: ListView(
+          children: _buildItemCards(),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openItemEdit(RouteNames.itemAdd),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -46,6 +55,17 @@ class _DashboardState extends State<Dashboard> {
   }
 
   List<ItemCard> _buildItemCards() {
-    return _items.map((item) => ItemCard(item: item)).toList();
+    return _items.map((item) => ItemCard(
+        item: item,
+        action: () => _openItemEdit(RouteNames.itemEdit, item),
+    )).toList();
+  }
+
+  void _openItemEdit(String routeName, [Item? item]) async {
+    var response = await context.pushNamed<Item?>(routeName, extra: item);
+
+    if (response != null) {
+      _loadData();
+    }
   }
 }

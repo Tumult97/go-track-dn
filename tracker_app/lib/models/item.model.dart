@@ -1,4 +1,5 @@
 class Item {
+  final int id;
   final String name;
   final String description;
   final String? quantity;
@@ -7,6 +8,7 @@ class Item {
   final int? locationId;
 
   Item({
+    this.id = 0,
     required this.name,
     required this.description,
     this.quantity,
