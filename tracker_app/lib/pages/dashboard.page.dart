@@ -1,71 +1,53 @@
-import 'dart:convert';
-import 'dart:core';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tracker_app/router/routes.constants.dart';
-import 'package:tracker_app/services/item.service.dart';
-
-import '../components/item-card.dart';
-import '../models/item.model.dart';
 
 class Dashboard extends StatefulWidget {
+  final Widget child; // 👈 nested page content
 
-  const Dashboard({super.key});
+  const Dashboard({super.key, required this.child});
 
   @override
   State<Dashboard> createState() => _DashboardState();
 }
 
 class _DashboardState extends State<Dashboard> {
-  List<Item> _items = [];
-
-  final ItemService _itemService = ItemService();
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-
-    String test = json.encode(_items).toString();
+    final location = GoRouterState.of(context).uri.toString();
+    _selectedIndex = _getSelectedIndex(location);
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ListView(
-          children: _buildItemCards(),
-        ),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        centerTitle: true,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openItemEdit(RouteNames.itemAdd),
-        child: const Icon(Icons.add),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() => _selectedIndex = index);
+          if (index == 0) context.go(Routes.items);
+          if (index == 1) context.go(Routes.locations);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2),
+            label: 'Items',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.location_on),
+            label: 'Locations',
+          ),
+        ],
       ),
+      body: widget.child,
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future _loadData() async {
-    var items = await _itemService.$getItems();
-    setState(() {
-      _items = items;
-    });
-  }
-
-  List<ItemCard> _buildItemCards() {
-    return _items.map((item) => ItemCard(
-        item: item,
-        action: () => _openItemEdit(RouteNames.itemEdit, item),
-    )).toList();
-  }
-
-  void _openItemEdit(String routeName, [Item? item]) async {
-    var response = await context.pushNamed<Item?>(routeName, extra: item);
-
-    if (response != null) {
-      _loadData();
-    }
+  int _getSelectedIndex(String location) {
+    if (location.contains('/locations')) return 1;
+    return 0;
   }
 }
