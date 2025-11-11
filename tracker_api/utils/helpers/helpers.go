@@ -25,6 +25,7 @@ func HandleEntitySave[T entities.Entity](
 	}
 
 	updatedEntity.SetUserId(userId)
+	updatedEntity.SetNowCreated()
 
 	result, err := repoFunc(updatedEntity)
 

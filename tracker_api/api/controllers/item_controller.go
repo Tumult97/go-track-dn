@@ -12,12 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var itemReposiotory = repos.NewItemRepository()
+var itemRepository = repos.NewItemRepository()
 
 func GetItems(context *gin.Context) {
 	userId, _ := jwt.ExtractUserIDFromContext(context)
 
-	items, err := itemReposiotory.GetAll(userId)
+	items, err := itemRepository.GetAll(userId)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, gin.H{
@@ -37,7 +37,7 @@ func GetItemById(context *gin.Context) {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("Parameter Id requried a valid number. %s", err.Error())})
 	}
 
-	item, err := itemReposiotory.GetById(id, userId)
+	item, err := itemRepository.GetById(id, userId)
 
 	if item == nil || err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "Item not found."})
@@ -50,13 +50,13 @@ func GetItemById(context *gin.Context) {
 func CreateItem(context *gin.Context) {
 	helpers.HandleEntitySave(
 		context,
-		itemReposiotory.Create)
+		itemRepository.Create)
 }
 
 func UpdateItem(context *gin.Context) {
 	helpers.HandleEntitySave(
 		context,
-		itemReposiotory.Update)
+		itemRepository.Update)
 }
 
 func DeleteItemById(context *gin.Context) {
@@ -69,7 +69,7 @@ func DeleteItemById(context *gin.Context) {
 		return
 	}
 
-	id, err = itemReposiotory.DeleteById(id, userId)
+	err = itemRepository.DeleteById(id, userId)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{

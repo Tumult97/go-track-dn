@@ -14,7 +14,7 @@ type IItemRepository interface {
 	Update(item *entities.Item) (*entities.Item, error)
 	GetAll(userId int) (*[]entities.Item, error)
 	GetById(id int, userId int) (*entities.Item, error)
-	DeleteById(id int, userId int) (int, error)
+	DeleteById(id int, userId int) error
 }
 
 type itemRepository struct{}
@@ -105,11 +105,11 @@ func (r *itemRepository) GetAll(userId int) (*[]entities.Item, error) {
 }
 
 func (r *itemRepository) GetById(id int, userId int) (*entities.Item, error) {
-	query := `SELECT TOP(1) id, name, description, quantity, price, is_per_item, user_id FROM items WHERE id = @id AND user_id = @userId`
+	query := `SELECT TOP(1) id, name, description, quantity, price, is_per_item, user_id, location_id FROM items WHERE id = @id AND user_id = @userId`
 	row := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId))
 
 	var item entities.Item
-	err := row.Scan(&item.Id, &item.Name, &item.Description, &item.Quantity, &item.Price, &item.IsPerItem)
+	err := row.Scan(&item.Id, &item.Name, &item.Description, &item.Quantity, &item.Price, &item.IsPerItem, &item.UserId, &item.LocationId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch item by id: %w", err)
 	}
@@ -117,13 +117,29 @@ func (r *itemRepository) GetById(id int, userId int) (*entities.Item, error) {
 	return &item, nil
 }
 
-func (r *itemRepository) DeleteById(id int, userId int) (int, error) {
+func (r *itemRepository) DeleteById(id int, userId int) error {
+	fmt.Println("Deleting item:", id, "for user:", userId)
+
 	query := "DELETE FROM items WHERE id = @id AND user_id = @userId"
-	err := database.DB.QueryRowContext(context.Background(), query, sql.Named("id", id), sql.Named("userId", userId)).Scan(&id)
+	result, err := database.DB.ExecContext(
+		context.Background(),
+		query,
+		sql.Named("id", id),
+		sql.Named("userId", userId),
+	)
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to delete item: %w", err)
+		return fmt.Errorf("failed to delete item: %w", err)
 	}
 
-	return id, nil
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to determine rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("item not found")
+	}
+
+	return nil
 }

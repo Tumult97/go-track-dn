@@ -18,7 +18,7 @@ import (
 
 var (
 	secretKey            []byte
-	accessTokenLifetime  time.Duration = 15 * time.Minute
+	accessTokenLifetime  time.Duration = 12 * time.Hour
 	refreshTokenLifetime time.Duration = 7 * 24 * time.Hour // 7 days
 	issuerName           string        = "tracker-api"
 )

@@ -71,14 +71,16 @@ func (repo *locationRepository) Create(location *entities.Location) (*entities.L
 func (repo *locationRepository) Update(location *entities.Location) (*entities.Location, error) {
 	query := `
 		UPDATE dbo.location
-		SET name = @name,
+		SET 
+			name = @name,
 			description = @description,
 			address_home = @home,
 			address_street = @street,
 			address_suburb = @suburb,
 			address_city = @city
-		WHERE id = @id AND user_id = @userId
-		OUTPUT INSERTED.id;
+		OUTPUT INSERTED.id
+		WHERE id = @id AND user_id = @userId;
+;
 	`
 
 	var id int
