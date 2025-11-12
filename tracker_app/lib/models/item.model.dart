@@ -24,14 +24,12 @@ class Item extends EntityBase {
   factory Item.fromJson(Map<String, dynamic> json) {
     return Item(
       id: json['id'] as int,
-      created: json['created'] as DateTime,
       name: json['name'] as String,
       description: json['description'] as String,
       quantity: json['quantity'] as String?,
       price: (json['price'] as num).toDouble(),
       isPerItem: json['isPerItem'] as bool,
       locationId: json['locationId'] as int?,
-      boughtDate: json['boughtDate'] as DateTime?
     );
   }
 

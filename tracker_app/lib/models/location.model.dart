@@ -22,7 +22,6 @@ class Location extends EntityBase {
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
       id: json['id'] ?? 0,
-      created: DateTime.tryParse(json['created'] ?? '') ?? DateTime(0),
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       addressHome: json['addressHome'] ?? '',
@@ -35,7 +34,6 @@ class Location extends EntityBase {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'created': created,
       'name': name,
       'description': description,
       'addressHome': addressHome,

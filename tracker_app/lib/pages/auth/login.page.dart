@@ -73,10 +73,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Expanded(
                 flex: 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('lib/assets/images/logo.png'),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('lib/assets/images/logo.png'),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -155,6 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     )
                   ],
+                ),
                 ),
               ),
               Expanded(

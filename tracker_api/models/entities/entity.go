@@ -9,15 +9,15 @@ type Entity interface {
 	SetId(id int)
 	GetUserId() int
 	SetUserId(id int)
-	GetCreated() time.Time
+	GetCreated() *time.Time
 	SetCreated(created time.Time)
 	SetNowCreated()
 }
 
 type BaseEntity struct {
-	Id         int       `json:"id"`
-	UserId     int       `json:"userId"`
-	Created    time.Time `json:"created"`
+	Id         int        `json:"id"`
+	UserId     int        `json:"userId"`
+	Created    *time.Time `json:"created"`
 }
 
 func (b BaseEntity) GetId() int {
@@ -36,14 +36,15 @@ func (b *BaseEntity) SetUserId(id int) {
 	b.UserId = id
 }
 
-func (b *BaseEntity) GetCreated() time.Time {
+func (b *BaseEntity) GetCreated() *time.Time {
 	return b.Created
 }
 
 func (b *BaseEntity) SetCreated(created time.Time) {
-	b.Created = created
+    b.Created = &created // assign pointer
 }
 
 func (b *BaseEntity) SetNowCreated() {
-	b.Created = time.Now()
+    now := time.Now()
+    b.Created = &now // assign pointer
 }
